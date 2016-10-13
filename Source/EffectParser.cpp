@@ -18,9 +18,10 @@ NoiseEffectCompiler::IEffectParser::IEffectParser()
 {
 }
 
-void  NoiseEffectCompiler::IEffectParser::Parse(const std::vector<N_TokenInfo>& list)
+bool  NoiseEffectCompiler::IEffectParser::Parse(const std::vector<N_TokenInfo>& list)
 {
 
+	return true;
 }
 
 /***********************TECHNIQUE *****************************/

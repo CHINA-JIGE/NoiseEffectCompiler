@@ -30,8 +30,10 @@ bool IEffectCompiler::Compile()
 	ID3DBlob* compiledCodeBlob;
 	ID3DBlob* errorMsgBlob;
 
+	if (!mFunction_ParseEffect())return false;
+
 	//compile shaders binary from files
-	HRESULT hr = D3DCompile(
+	/*HRESULT hr = D3DCompile(
 		mEffectFileName.c_str(),
 		mEffectFileName.size(),
 		NULL,
@@ -43,7 +45,7 @@ bool IEffectCompiler::Compile()
 		NULL,//we're not compiling an effect, set to null
 		&compiledCodeBlob,
 		&errorMsgBlob
-	);
+	);*/
 
 	return true;
 }
@@ -70,7 +72,6 @@ bool IEffectCompiler::mFunction_LoadParameters(int argc, char * argv[])
 		//loop through all argv(some could be command, some could be param of specific command, some might be invalid)
 		std::string currArgv = "";//the first argument is path of executing program
 		int index = 0; 
-
 		while (index<argc)
 		{
 			currArgv = argv[index];
@@ -83,38 +84,40 @@ bool IEffectCompiler::mFunction_LoadParameters(int argc, char * argv[])
 			//-------------command: output compiled effect file
 			if (currArgv == "/Out")
 			{
-				index++;
+				++index;
+
 				if (index < argc)
 				{
 					mTargetFileName = argv[index];
+					++index;
 				}
 				else
-				{
-					std::cout << "/Out command found with no parameters." << std::endl;
-				}
+				{std::cout << "/Out command found with no parameters." << std::endl;}
 
-				continue;
+				goto label_nextLoop;
 			}
 
 			//-------------command: input compile config file
 			if (currArgv == "/EffectPath")
 			{
-				index++;
+				++index;
+
 				if (index < argc)
 				{
 					mEffectFileName = argv[index];
+					++index;
 				}
 				else
-				{
-					std::cout << "/EffectPath command found with no parameters." << std::endl;
-				}
+				{std::cout << "/EffectPath command found with no parameters." << std::endl;};
 
-				continue;
+				goto label_nextLoop;
 			}
 
 			//--------------unrecognized string
 			std::cout << "encounter unrecognized string : \'" << argv[index] <<"\'"<< std::endl;
-			index++;
+			++index;
+
+		label_nextLoop:;
 		}
 
 		if (mTargetFileName.size() != 0 &&
@@ -149,6 +152,8 @@ bool IEffectCompiler::mFunction_LoadFiles()
 		outDataBuffer.resize(fileSize);
 		sourceFile.read((char*)&outDataBuffer.at(0), fileSize);
 		sourceFile.close();
+
+		return true;
 	};
 
 	//load source file
@@ -162,8 +167,15 @@ bool IEffectCompiler::mFunction_LoadFiles()
 
 bool IEffectCompiler::mFunction_ParseEffect()
 {
-	NoiseEffectCompiler::Parser:: IEffectParser parser;
-	parser.Tokenize(mEffectFileBuffer);
+	//tokenize
+	NoiseEffectCompiler::IEffectTokenizer tokenizer;
+	if (!tokenizer.Tokenize(mEffectFileBuffer)) {};//return false;
+	std::vector<N_TokenInfo> tokenList;
+	tokenizer.GetTokenList(tokenList);
 
-	return false;
+	//parse token stream
+	NoiseEffectCompiler:: IEffectParser parser;
+	if (!parser.Parse(tokenList))return false;
+
+	return true;
 }

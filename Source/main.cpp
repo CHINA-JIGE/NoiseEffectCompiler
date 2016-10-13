@@ -10,6 +10,7 @@ NoiseEffectCompiler::IEffectCompiler compiler;
 
 int main(int argc, char* argv[])
 {
+	
 	//title
 	std::cout << "Noise Effect Compiler -- Powered by Jige" << std::endl << std::endl;
 
@@ -21,7 +22,9 @@ int main(int argc, char* argv[])
 	};
 
 	//compile
-	compiler.Compile();
+	if(compiler.Compile())std::cout<<"Compilation successfully completed!!!"<<std::endl;
+
+	system("pause");
 
 	return 1;
 }

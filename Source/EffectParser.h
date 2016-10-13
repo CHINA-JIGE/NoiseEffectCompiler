@@ -18,7 +18,6 @@ namespace NoiseEffectCompiler
 			std::string version;
 		};
 
-
 		class IPass
 		{
 		public:
@@ -75,7 +74,7 @@ namespace NoiseEffectCompiler
 
 			IEffectParser();
 
-			void Parse(const std::vector<N_TokenInfo>& list);//step 2
+			bool Parse(const std::vector<N_TokenInfo>& list);//step 2
 
 		private:
 

@@ -22,6 +22,8 @@ namespace NoiseEffectCompiler
 
 	bool isCharDelimiter(uchar c);
 
+	bool isCharSpaceTabReturn(uchar c);
+
 	enum TOKEN_TYPE
 	{
 		TK_ANNOTATION=0,
@@ -34,8 +36,8 @@ namespace NoiseEffectCompiler
 
 	struct N_TokenInfo
 	{
-		UINT offset;//byte pos in file
-		UINT size;
+		UINT byteOffset;//byte pos in file
+		UINT byteSize;
 		TOKEN_TYPE type;
 		std::string content;
 	};
@@ -49,8 +51,10 @@ namespace NoiseEffectCompiler
 
 			~IEffectTokenizer();
 
-			void	Tokenize(const std::vector<unsigned char>& effectFileBuffer);//step 1
-															  
+			bool	Tokenize(const std::vector<unsigned char>& effectFileBuffer);//step 1
+		
+			void GetTokenList(std::vector<N_TokenInfo>& outTokenList);//step2
+
 		private:
 
 			enum LEXER_STATE
@@ -60,27 +64,32 @@ namespace NoiseEffectCompiler
 
 				//  ANNOTATION
 				LS_SLASH = 1,
-				LS_ANNOTATION_SINGLE_NEWTOKEN=2,
+				LS_ANNOTATION_SINGLE_NEWTOKEN = 2,
 				LS_ANNOTATION_SINGLE_BODY = 3,// Enter annotation <//>
 				LS_ANNOTATION_MUL_NEWTOKEN = 4, //start of /* annotation
 				LS_ANNOTATION_MUL_BODY = 5,// /* annotation
 				LS_ANNOTATION_MUL_ENDSTAR = 6,// /* * annotation might come to an end
+				LS_ANNOTATION_MUL_ENDSLASH=7,
 
 				//PREPROCESS INSTRUCTION
-				LS_PREPROCESS_SHARP = 7, // #
-				LS_PREPROCESS_NEWTOKEN = 8,//#INCLUDE
+				LS_PREPROCESS_NEWTOKEN = 11, // #
+				LS_PREPROCESS_INST_BODY = 12,//instruction body
 
 				//IDENTIFIER
-				LS_IDENTIFIER_NEWTOKEN = 9,
-				LS_IDENTIFIER_APPEND_CHAR = 10,
+				LS_IDENTIFIER_NEWTOKEN = 21,
+				LS_IDENTIFIER_BODY = 22,
 
 				//DELIMITER  ; { } ( ) ,  \n  , + - *  / \ = [ ] | <> :
-				LS_DELIM_NEWTOKEN = 11,
+				LS_DELIM_NEWTOKEN = 31,
 
 				//LITERAL STRING ""
-				LS_LITERAL_STRING_NEWTOKEN = 12,
-				LS_LITERAL_STRING_BODY = 13,//MAIN BODY OF LITERAL STRING
-				LS_LITERAL_STRING_ESCAPED = 14, // ENTER ESCAPING STATE \ 
+				LS_LITERAL_STRING_NEWTOKEN = 41,
+				LS_LITERAL_STRING_BODY = 42,//MAIN BODY OF LITERAL STRING
+				LS_LITERAL_STRING_ESCAPED = 43, // ENTER ESCAPING STATE \ 
+
+				//number
+				LS_NUMBER_NEWTOKEN=51,
+				LS_NUMBER_BODY=52,
 
 				LS_ERROR = 9999,
 			};
@@ -91,7 +100,7 @@ namespace NoiseEffectCompiler
 
 			void mFunction_LexerStateTransition(const std::vector<unsigned char>& effectFileBuffer,UINT filePos);//transition according to input char
 
-			void mFunction_LexerStateMachineOutput();
+			bool mFunction_LexerStateMachineOutput(const std::vector<unsigned char>& effectFileBuffer, UINT filePos);
 
 	};
 
