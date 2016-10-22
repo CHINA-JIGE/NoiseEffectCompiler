@@ -8,37 +8,83 @@
 ***********************************************************/
 #pragma once
 
-
 namespace NoiseEffectCompiler
 {
 
-		struct IShader
+		struct N_Shader
 		{
 			std::string entryPoint;
 			std::string version;
 		};
 
+		//used in Unique shader unordered_set
+		struct IShaderHasher
+		{
+			//functor
+			size_t    operator()(N_Shader s) const
+			{
+				//std::hash<std::string>()() :::: invoke  () operator functor 
+				//0xAAAAAAAA is the mask of 1,3,5,7,9... bit from L to R
+				//0x55555555 is the mask of 2,4,6,8,10... bit from L to R
+				return
+					(std::hash<std::string>()(s.entryPoint) & 0xAAAAAAAA) |
+					(std::hash<std::string>()(s.version) & 0x55555555);
+			}
+		};
+
+		//used in Unique shader unordered_set
+		struct IShaderComparator
+		{
+			bool operator()(const N_Shader& lhs,const N_Shader& rhs) const
+			{
+				return (lhs.entryPoint == rhs.entryPoint) && (lhs.version == rhs.version);
+			}
+		};
+
+
+
+		//--------------------HIERARCHY----------------
+		//	Effect
+		//		|---Technique
+		//		|			|---Pass
+		//		|			|		|----VertexShader(crucial)
+		//		|			|		|----PixelShader(crucial)
+		//		|			|		|----GeometryShader(optional)
+		//		|			|---Pass
+		//		|			|		|----VertexShader(crucial)
+		//		|			|		|----PixelShader(crucial)
+		//		|			|		|----GeometryShader(optional)
+		//		|			|  ...................
+		//		|
+		//		|---Technique
+		//		|			|---Pass
+		//		|			|		|   ...................
+		//		|			|   ...................
+		//		|
+		//		| ...................
+		//-----------------------------
+
 		class IPass
 		{
 		public:
 
-			void SetVS(IShader shader);
+			void SetVS(N_Shader shader);
 
-			void SetGS(IShader shader);
+			void SetGS(N_Shader shader);
 
-			void SetPS(IShader shader);
+			void SetPS(N_Shader shader);
 
-			void GetVS(IShader& outShader);
+			void GetVS(N_Shader& outShader);
 
-			void GetGS(IShader& outShader);
+			void GetGS(N_Shader& outShader);
 
-			void GetPS(IShader& outShader);
+			void GetPS(N_Shader& outShader);
 
 		private:
 
-			IShader mVS;
-			IShader mGS;
-			IShader mPS;
+			N_Shader mVS;
+			N_Shader mGS;
+			N_Shader mPS;
 
 		};
 
@@ -74,11 +120,42 @@ namespace NoiseEffectCompiler
 
 			IEffectParser();
 
-			bool Parse(const std::vector<N_TokenInfo>& list);//step 2
+			bool Parse(std::vector<N_TokenInfo>&& tokenList);//parse Effect (many techiniques)
+
+			void GetHLSLFileList(std::vector<std::string>& outFileList);
+
+			void GetCompilationPlan(std::vector<N_Shader>& outShaderList);//shaders that need compiling
 
 		private:
 
-			std::unordered_map<std::string, std::string> mUniqueShaderEntryPointHashTable;//shader name
+			enum NOISE_SHADER_TYPE
+			{
+				NOISE_SHADER_TYPE_VS = 1,
+				NOISE_SHADER_TYPE_PS = 2,
+				NOISE_SHADER_TYPE_GS = 3,
+			};
+
+			UINT mTokenIndex;
+
+			bool mFunction_ParseIncludeInstruction();
+
+			bool mFunction_ParseTechnique();
+
+			bool mFunction_ParsePass(ITechnique* pFatherTechnique);
+
+			bool mFunction_ParseShaderConfig(IPass* pFatherPass, NOISE_SHADER_TYPE st);
+
+			bool mFunction_MatchCurrentToken(TOKEN_TYPE type);
+
+			bool	mFunction_MatchCurrentToken(TOKEN_TYPE type, const std::string& content);
+
+			void mFunction_ReportError(const std::string& msg);
+
+			std::vector<N_TokenInfo> mTokenList;//in
+
+			std::vector<std::string> mSourceFileList;//out
+
+			std::unordered_set<N_Shader,IShaderHasher,IShaderComparator> mUniqueShaderTable;//out
 
 			IEffect		mEffect;//one file for one Effect
 

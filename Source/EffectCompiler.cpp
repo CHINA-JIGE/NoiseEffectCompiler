@@ -30,8 +30,11 @@ bool IEffectCompiler::Compile()
 	ID3DBlob* compiledCodeBlob;
 	ID3DBlob* errorMsgBlob;
 
-	if (!mFunction_ParseEffect())return false;
+	std::vector<N_Shader> shaderList;
+	std::vector<std::string> sourceFileList;
 
+	if (!mFunction_ParseEffect(shaderList,sourceFileList))return false;
+	
 	//compile shaders binary from files
 	/*HRESULT hr = D3DCompile(
 		mEffectFileName.c_str(),
@@ -71,7 +74,7 @@ bool IEffectCompiler::mFunction_LoadParameters(int argc, char * argv[])
 
 		//loop through all argv(some could be command, some could be param of specific command, some might be invalid)
 		std::string currArgv = "";//the first argument is path of executing program
-		int index = 0; 
+		int index = 1; //skip app path
 		while (index<argc)
 		{
 			currArgv = argv[index];
@@ -147,7 +150,7 @@ bool IEffectCompiler::mFunction_LoadFiles()
 
 		//load source file
 		sourceFile.seekg(0, std::ios::end);
-		UINT fileSize = sourceFile.tellg();
+		std::streamoff fileSize = sourceFile.tellg();
 		sourceFile.seekg(0);
 		outDataBuffer.resize(fileSize);
 		sourceFile.read((char*)&outDataBuffer.at(0), fileSize);
@@ -165,17 +168,19 @@ bool IEffectCompiler::mFunction_LoadFiles()
 	return true;
 }
 
-bool IEffectCompiler::mFunction_ParseEffect()
+bool IEffectCompiler::mFunction_ParseEffect(std::vector<N_Shader>& outShaderList, std::vector<std::string>& outSourceFileList)
 {
 	//tokenize
 	NoiseEffectCompiler::IEffectTokenizer tokenizer;
-	if (!tokenizer.Tokenize(mEffectFileBuffer)) {};//return false;
+	if (!tokenizer.Tokenize(mEffectFileBuffer)) { return false; }
 	std::vector<N_TokenInfo> tokenList;
 	tokenizer.GetTokenList(tokenList);
 
 	//parse token stream
 	NoiseEffectCompiler:: IEffectParser parser;
-	if (!parser.Parse(tokenList))return false;
+	if (!parser.Parse(std::move(tokenList))) { return false; }
+	parser.GetCompilationPlan(outShaderList);
+	parser.GetHLSLFileList(outSourceFileList);
 
 	return true;
 }

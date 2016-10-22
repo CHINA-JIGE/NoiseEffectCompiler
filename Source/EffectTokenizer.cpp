@@ -4,14 +4,21 @@
 
 ***********************************************************/
 
+//there is something should be noted ,that keyword is categorized into 'identifier'
+
 #include "EffectCompiler.h"
 
 using namespace NoiseEffectCompiler;
 
 
 NoiseEffectCompiler::IEffectTokenizer::IEffectTokenizer()
-	: mLexerState(LS_NORMAL)
+	: mLexerState(LS_NORMAL),
+	mKeywordList({
+	"Technique","Pass",
+	"VS","PS","GS",
+	"vs_5_0","ps_5_0","gs_5_0"})
 {
+
 }
 
 NoiseEffectCompiler::IEffectTokenizer::~IEffectTokenizer()
@@ -28,6 +35,9 @@ bool NoiseEffectCompiler::IEffectTokenizer::Tokenize(const std::vector<unsigned 
 	//(2016.10.3)actually I can't really understand NFA->DFA conversion now... thus I could only
 	//managed to borrow this state machine idea to implement my own algorithm
 	mTokenList.clear();
+	mAnnotationList.clear();
+	mLexerState = LS_NORMAL;
+	mLineNumberInSource = 0;
 
 	//start iteration
 	bool isSucceeded = true;
@@ -40,14 +50,26 @@ bool NoiseEffectCompiler::IEffectTokenizer::Tokenize(const std::vector<unsigned 
 	};
 
 	if (isSucceeded)
-	{return true;}
+	{
+		//all 'word's are recognized as identifier at the very beginning, now convert qualified word into 'keyword'
+		//only modified "type" field
+		mFunction_FindKeywordsInIdentifier();
+		return true;
+	}
 	else
-	{ return false; }
+	{
+		return false; 
+	}
 }
 
 void NoiseEffectCompiler::IEffectTokenizer::GetTokenList(std::vector<N_TokenInfo>& outTokenList)
 {
-	outTokenList = std::move(mTokenList);
+	outTokenList =mTokenList;
+}
+
+void NoiseEffectCompiler::IEffectTokenizer::GetAnnotationList(std::vector<N_TokenInfo>& outTokenList)
+{
+	outTokenList = mAnnotationList;
 }
 
 void NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateTransition(const std::vector<unsigned char>& effectFileBuffer,UINT filePos)
@@ -57,12 +79,15 @@ void NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateTransition(const
 	if(filePos < effectFileBuffer.size()-1) peek = effectFileBuffer.at(filePos + 1);
 	static std::string errorMsg = "";
 
+	//trace current LINE number in source file to present more error message
+	if (c == '\n')++mLineNumberInSource;
+
 	//some common state transitions which interrupt  many token generation state
 	auto func_commonTransition=[&]()->bool
 	{
 		if (isCharDelimiter(c)) { mLexerState = LS_DELIM_NEWTOKEN; return true; }
 		else if (c == '/') { mLexerState = LS_SLASH; return true;}
-		else if (isCharSpaceTabReturn(c)) { mLexerState = LS_NORMAL;return true;}
+		else if (isCharSpaceTabNextline(c)) { mLexerState = LS_NORMAL;return true;}
 		//true for transition occur
 		return false;
 	};
@@ -166,11 +191,12 @@ void NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateTransition(const
 	case LS_NUMBER_BODY:
 		if(isCharDigit(c) || c=='.' ){}//number body (only integer??)
 		else 	if (func_commonTransition()) {}	//true for transition occur
-		else { mLexerState = LS_ERROR;errorMsg = "Unexpected Character in a number!"; }
+		else { mLexerState = LS_ERROR;errorMsg =  "Unexpected Character in a number!"; }
 		break;
 
 	case LS_ERROR:
-		std::cout << "Noise Effect Compiler : Error Occur! " << std::endl <<"ErrorMsg :"<< errorMsg << std::endl;
+		std::cout << "LINE:" << mLineNumberInSource <<std::endl<<
+			"---Tokenizer Error : " << errorMsg <<std::endl<< std::endl;
 		mLexerState = LS_NORMAL;//recover from error
 		break;
 
@@ -201,14 +227,15 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		token.byteSize = 0;
 		token.content = "";
 		token.type = TK_ANNOTATION;
-		mTokenList.push_back(token);
+		token.line = mLineNumberInSource;
+		mAnnotationList.push_back(token);
 		break;
 	}
 
 	//  annotation body <//>
 	case LS_ANNOTATION_SINGLE_BODY:
-		mTokenList.back().content.push_back(effectFileBuffer.at(filePos));
-		mTokenList.back().byteSize++;
+		mAnnotationList.back().content.push_back(effectFileBuffer.at(filePos));
+		mAnnotationList.back().byteSize++;
 		break;
 
 	case LS_ANNOTATION_MUL_NEWTOKEN:
@@ -218,13 +245,14 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		token.byteSize = 0;
 		token.content = "";
 		token.type = TK_ANNOTATION;
-		mTokenList.push_back(token);
+		token.line = mLineNumberInSource;
+		mAnnotationList.push_back(token);
 		break;
 	}
 
 	case LS_ANNOTATION_MUL_BODY:
-		mTokenList.back().content.push_back(effectFileBuffer.at(filePos));
-		mTokenList.back().byteSize++;
+		mAnnotationList.back().content.push_back(effectFileBuffer.at(filePos));
+		mAnnotationList.back().byteSize++;
 		break;
 
 	case LS_ANNOTATION_MUL_ENDSTAR:
@@ -242,6 +270,7 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		token.byteSize = 0;
 		token.content ="";
 		token.type = TK_PREPROCESS;
+		token.line = mLineNumberInSource;
 		mTokenList.push_back(token);
 		break;
 	}
@@ -258,6 +287,7 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		token.byteSize = 1;
 		token.content = effectFileBuffer.at(filePos);
 		token.type = TK_IDENTIFIER;
+		token.line = mLineNumberInSource;
 		mTokenList.push_back(token);
 		break;
 	}
@@ -275,6 +305,7 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		token.byteSize = 1;
 		token.content = effectFileBuffer.at(filePos);
 		token.type = TK_DELIMITER;
+		token.line = mLineNumberInSource;
 		mTokenList.push_back(token);
 		break;
 	}
@@ -288,6 +319,7 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		token.byteSize = 0;
 		token.content = "";
 		token.type = TK_LITERAL_STR;
+		token.line = mLineNumberInSource;
 		mTokenList.push_back(token);
 		break;
 	}
@@ -326,6 +358,7 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		token.byteSize = 1;
 		token.content = effectFileBuffer.at(filePos);
 		token.type = TK_NUMBER;
+		token.line = mLineNumberInSource;
 		mTokenList.push_back(token);
 		break;
 	}
@@ -344,6 +377,18 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		break;
 	}	
 	return true;
+}
+
+void NoiseEffectCompiler::IEffectTokenizer::mFunction_FindKeywordsInIdentifier()
+{
+	for (auto& t : mTokenList)
+	{
+		//if this token match preset string pattern in the keyword unordered_set, then it's a KEYWORD
+		if (mKeywordList.find(t.content) != mKeywordList.end())
+		{
+			t.type = TK_KEYWORD;
+		}
+	}
 }
 
 
@@ -374,7 +419,7 @@ inline bool NoiseEffectCompiler::isCharDelimiter(uchar c)
 	return (c == ';') || (c == '(') || (c == ')') || (c == '{') || (c == '}') ||(c==',');//interested delimiter in NoiseEffect
 }
 
-bool NoiseEffectCompiler::isCharSpaceTabReturn(uchar c)
+bool NoiseEffectCompiler::isCharSpaceTabNextline(uchar c)
 {
 	return (c==' ' || c=='\t' || c=='\n' || c=='\r');
 }

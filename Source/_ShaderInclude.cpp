@@ -38,7 +38,18 @@ HRESULT IShaderInclude::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pRelativeFileN
 
 
 		if (includeFile.is_open()) {
-			long long fileSize = includeFile.tellg();
+			UINT fileSize = 0;
+			long long LLFileSize = includeFile.tellg();
+
+			//UINT can't overflow
+			if (LLFileSize <= UINT_MAX)
+			{
+				fileSize = UINT(LLFileSize);
+			}
+			else
+			{
+				throw std::exception("File Error : Open hlsl Include file failed!! file is too large!");
+			}
 			char* buf = new char[fileSize];
 			includeFile.seekg(0, std::ios::beg);
 			includeFile.read(buf, fileSize);
@@ -52,6 +63,7 @@ HRESULT IShaderInclude::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pRelativeFileN
 		return S_OK;
 	}
 	catch (std::exception& e) {
+		ERROR_MSG(e.what());
 		return E_FAIL;
 	}
 }

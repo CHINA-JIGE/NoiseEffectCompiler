@@ -22,7 +22,7 @@ namespace NoiseEffectCompiler
 
 	bool isCharDelimiter(uchar c);
 
-	bool isCharSpaceTabReturn(uchar c);
+	bool isCharSpaceTabNextline(uchar c);
 
 	enum TOKEN_TYPE
 	{
@@ -31,11 +31,13 @@ namespace NoiseEffectCompiler
 		TK_PREPROCESS=2,
 		TK_LITERAL_STR=3,
 		TK_IDENTIFIER=4,
-		TK_NUMBER=5
+		TK_NUMBER=5,
+		TK_KEYWORD=6,
 	};
 
 	struct N_TokenInfo
 	{
+		UINT line;//Line number in source file
 		UINT byteOffset;//byte pos in file
 		UINT byteSize;
 		TOKEN_TYPE type;
@@ -54,6 +56,8 @@ namespace NoiseEffectCompiler
 			bool	Tokenize(const std::vector<unsigned char>& effectFileBuffer);//step 1
 		
 			void GetTokenList(std::vector<N_TokenInfo>& outTokenList);//step2
+
+			void GetAnnotationList(std::vector<N_TokenInfo>& outTokenList);
 
 		private:
 
@@ -96,11 +100,19 @@ namespace NoiseEffectCompiler
 
 			LEXER_STATE mLexerState;
 
+			UINT mLineNumberInSource;
+
+			std::unordered_set<std::string> mKeywordList;//holds preset keywords for verification
+
 			std::vector<N_TokenInfo> mTokenList;
+
+			std::vector<N_TokenInfo> mAnnotationList;
 
 			void mFunction_LexerStateTransition(const std::vector<unsigned char>& effectFileBuffer,UINT filePos);//transition according to input char
 
 			bool mFunction_LexerStateMachineOutput(const std::vector<unsigned char>& effectFileBuffer, UINT filePos);
+
+			void mFunction_FindKeywordsInIdentifier();
 
 	};
 

@@ -82,7 +82,6 @@ namespace NoiseEffectCompiler
 			delete m_pUidToIndexHashTable;
 		};
 
-	protected:
 		//runtime creation of objects, of which the max count is limited
 		objType*	CreateObject(N_UID objUID)
 		{

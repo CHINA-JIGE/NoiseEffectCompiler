@@ -1,51 +1,55 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
+    <Filter Include="Tokenizer">
+      <UniqueIdentifier>{9a93d2c7-44a9-4bd2-8068-f0299a3c7e61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parser">
+      <UniqueIdentifier>{376b4450-751d-4ff5-be27-beaff98a7145}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="main">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="头文件">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    <Filter Include="_ShaderInclude">
+      <UniqueIdentifier>{f7b9e589-2e6b-4667-b337-bf9764206efa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="资源文件">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="IFactory">
+      <UniqueIdentifier>{6775ca11-2b3e-40e3-869e-18d1ce5cef36}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="_ShaderInclude.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="EffectTokenizer.h">
+      <Filter>Tokenizer</Filter>
     </ClInclude>
     <ClInclude Include="EffectParser.h">
-      <Filter>头文件</Filter>
+      <Filter>Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="_ShaderInclude.h">
+      <Filter>_ShaderInclude</Filter>
     </ClInclude>
     <ClInclude Include="IFactory.h">
-      <Filter>头文件</Filter>
+      <Filter>IFactory</Filter>
     </ClInclude>
     <ClInclude Include="EffectCompiler.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectTokenizer.h">
-      <Filter>头文件</Filter>
+      <Filter>main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="_ShaderInclude.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectParser.cpp">
-      <Filter>源文件</Filter>
+      <Filter>main</Filter>
     </ClCompile>
     <ClCompile Include="EffectCompiler.cpp">
-      <Filter>源文件</Filter>
+      <Filter>main</Filter>
     </ClCompile>
     <ClCompile Include="EffectTokenizer.cpp">
-      <Filter>源文件</Filter>
+      <Filter>Tokenizer</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectParser.cpp">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="_ShaderInclude.cpp">
+      <Filter>_ShaderInclude</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

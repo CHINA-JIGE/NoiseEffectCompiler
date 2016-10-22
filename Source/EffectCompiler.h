@@ -14,11 +14,15 @@
 #pragma once
 #pragma warning (disable : 4005)//macro redefined WIN8 SDKºÍDXSDK
 
+#define ERROR_MSG(msg)\
+std::cout<<msg<<std::endl;\
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <algorithm>
+#include <unordered_set>
 #include <unordered_map>
 #include "d3d11.h"
 #include "d3dcompiler.h"
@@ -46,7 +50,7 @@ namespace NoiseEffectCompiler
 
 		bool		mFunction_LoadFiles();
 
-		bool		mFunction_ParseEffect();
+		bool		mFunction_ParseEffect(std::vector<N_Shader>& outShaderList,std::vector<std::string>& outSourceFileList);
 
 		std::string mTargetFileName;
 		std::string mEffectFileName;
