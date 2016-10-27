@@ -10,9 +10,10 @@
 
 using namespace NoiseEffectCompiler;
 
-IShaderInclude::IShaderInclude()
+IShaderInclude::IShaderInclude(const std::string& relativePath)
 {
 	mSystemDir.resize(MAX_PATH + 1);
+	mRelativePath = relativePath;
 	GetSystemDirectoryA(&mSystemDir.at(0), mSystemDir.size());
 }
 
@@ -23,7 +24,7 @@ HRESULT IShaderInclude::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pRelativeFileN
 		switch (IncludeType)
 		{
 		case D3D_INCLUDE_LOCAL:
-			finalPath =pRelativeFileName;//relative dir to
+			finalPath = mRelativePath+pRelativeFileName;//relative dir to
 			break;
 		case D3D_INCLUDE_SYSTEM:
 			finalPath = mSystemDir + "\"" + pRelativeFileName;
@@ -57,7 +58,8 @@ HRESULT IShaderInclude::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pRelativeFileN
 			*ppData = buf;
 			*pBytes = fileSize;
 		}
-		else {
+		else 
+		{
 			return E_FAIL;
 		}
 		return S_OK;

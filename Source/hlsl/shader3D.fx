@@ -8,7 +8,7 @@
 **************************************************************************/
 
 #include "input_struct.fx"
-#include "3D Function.fx"
+#include "3D_Function.fx"
 
 //---------------------------------Default Draw--------------------------------------
 VS_OUTPUT_DEFAULT VS_DefaultDraw(VS_INPUT_DEFAULT input )

@@ -17,6 +17,9 @@
     <Filter Include="IFactory">
       <UniqueIdentifier>{6775ca11-2b3e-40e3-869e-18d1ce5cef36}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ShaderReflector">
+      <UniqueIdentifier>{408578fc-ec78-47c1-812e-11245c8d5aae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EffectTokenizer.h">
@@ -34,6 +37,9 @@
     <ClInclude Include="EffectCompiler.h">
       <Filter>main</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderReflector.h">
+      <Filter>ShaderReflector</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -50,6 +56,9 @@
     </ClCompile>
     <ClCompile Include="_ShaderInclude.cpp">
       <Filter>_ShaderInclude</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderReflector.cpp">
+      <Filter>ShaderReflector</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

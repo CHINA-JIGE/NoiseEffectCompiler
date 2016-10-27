@@ -9,7 +9,6 @@
 using namespace NoiseEffectCompiler;
 
 IEffectCompiler::IEffectCompiler():
-	pSR(nullptr),
 	mTargetFileName(""),
 	mEffectFileName("")
 {
@@ -25,30 +24,25 @@ bool IEffectCompiler::ParseCommandLine(int argc, char* argv[])
 
 bool IEffectCompiler::Compile()
 {
-	
-	NoiseEffectCompiler::IShaderInclude shaderInclude;
-	ID3DBlob* compiledCodeBlob;
-	ID3DBlob* errorMsgBlob;
+	//---------------------------
+	std::cout << "Effect Parsing Stage...." << std::endl;
 
 	std::vector<N_Shader> shaderList;
 	std::vector<std::string> sourceFileList;
 
 	if (!mFunction_ParseEffect(shaderList,sourceFileList))return false;
 	
-	//compile shaders binary from files
-	/*HRESULT hr = D3DCompile(
-		mEffectFileName.c_str(),
-		mEffectFileName.size(),
-		NULL,
-		NULL,
-		&shaderInclude,
-		entryPointNeedToBeParsed,
-		shaderTargetVersionNeedToBeParsed,
-		D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR, //D3DCompile_
-		NULL,//we're not compiling an effect, set to null
-		&compiledCodeBlob,
-		&errorMsgBlob
-	);*/
+	std::cout << "Effect Parsing Stage Completed." << std::endl;
+	
+	//---------------------------
+	std::vector<ID3DBlob*> compiledCodeBlobList(shaderList.size());
+	if (!mFunction_CompileHLSL(shaderList, sourceFileList, compiledCodeBlobList))return false;
+
+	std::cout << "HSLS Compilation Stage Completed." << std::endl;
+
+	//------------------------------
+	//D3D Reflection
+	if (!mFunction_ShaderReflection(compiledCodeBlobList))return false;
 
 	return true;
 }
@@ -68,7 +62,6 @@ bool IEffectCompiler::mFunction_LoadParameters(int argc, char * argv[])
 		{
 			//then exit
 			std::cout << "Compile Error!Not enough Parameters was passed in." << std::endl;
-			system("pause");
 			return false;
 		}
 
@@ -136,6 +129,18 @@ bool IEffectCompiler::mFunction_LoadParameters(int argc, char * argv[])
 
 bool IEffectCompiler::mFunction_LoadFiles()
 {
+	auto func_computeRelativePath = [](const std::string& wholePath,std::string& outRelativePath)
+	{
+		for (UINT i = wholePath.size() - 1;i >= 0;--i)
+		{
+			if (wholePath.at(i) == '\\' || wholePath.at(i) == '/')
+			{
+				outRelativePath = wholePath.substr(0, i);
+				return;
+			}
+		}
+	};
+
 	auto func_LoadFile = [](const std::string& filePath,std::vector<unsigned char>& outDataBuffer)
 	{
 		//check file path
@@ -152,18 +157,17 @@ bool IEffectCompiler::mFunction_LoadFiles()
 		sourceFile.seekg(0, std::ios::end);
 		std::streamoff fileSize = sourceFile.tellg();
 		sourceFile.seekg(0);
-		outDataBuffer.resize(fileSize);
+		outDataBuffer.resize(UINT(fileSize));
 		sourceFile.read((char*)&outDataBuffer.at(0), fileSize);
 		sourceFile.close();
 
 		return true;
 	};
 
-	//load source file
-	//func_LoadFile(mSourceFileName, mSourceCodeFileBuffer);
-
 	//load noise effect file 
 	func_LoadFile(mEffectFileName, mEffectFileBuffer);
+
+	func_computeRelativePath(mEffectFileName, mRelativePath);
 
 	return true;
 }
@@ -182,5 +186,83 @@ bool IEffectCompiler::mFunction_ParseEffect(std::vector<N_Shader>& outShaderList
 	parser.GetCompilationPlan(outShaderList);
 	parser.GetHLSLFileList(outSourceFileList);
 
+	return true;
+}
+
+bool IEffectCompiler::mFunction_CompileHLSL(const std::vector<N_Shader>& shaderList, const std::vector<std::string>& sourceFileList, std::vector<ID3DBlob*>& outCompiledShaderCode)
+{
+
+	//only reserve "#include" + sourceFile in this intermediate file for d3dcompile to compile hlsl
+	//std::string intermediateUncompiledSource;
+	std::cout << "HSLS Compilation Stage...." << std::endl;
+
+	std::string intermediateUncompiledSource("");
+	for (auto& sf : sourceFileList)intermediateUncompiledSource += ("#include \"" + sf + "\"\n");
+
+	//------------COMPILE HLSL---------------
+	NoiseEffectCompiler::IShaderInclude shaderInclude(mRelativePath);
+	std::vector<ID3DBlob*> errorMsgBlobList(shaderList.size());
+	std::wstring tmpRelativePathW(mRelativePath.begin(), mRelativePath.end());
+
+	for (UINT i = 0;i<shaderList.size();i++)
+	{
+		auto & sd = shaderList.at(i);
+
+		std::cout << "Compile Shader--- EntryPoint:" << sd.entryPoint << ",targetVersion:" << sd.version << std::endl;
+
+		//---------------------------D3D COMPILE (HLSL)---------------------
+		//an serious problem occur!!! when a .sample exist in a "if-else" branch which is nested inside a "for" loop,
+		//a catastrophic LOOP UNROLL will occur and thus led to a tremendous code size increasement
+		//---> horrible compilation time increasement
+		//---> ("if-else" branch with tex.sample ("gradient instruction")should be removed.
+		//---> one-branch-one-shader strategy might be used. (then N switches variables will need 2^n shaders)
+
+		//compile shaders binary from intermediate source code string
+		//D3DCompileFromFile() in win8sdk can also be used
+		HRESULT hr = D3DCompile(
+			intermediateUncompiledSource.c_str(),
+			intermediateUncompiledSource.size(),
+			NULL,
+			NULL,
+			&shaderInclude,
+			sd.entryPoint.c_str(),
+			sd.version.c_str(),
+			D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR,
+			NULL,//we're not compiling an effect, set to null
+			&outCompiledShaderCode.at(i),
+			&errorMsgBlobList.at(i)
+		);
+
+		//check if HLSL compilation failed
+		if (FAILED(hr))
+		{
+			std::cout << "shader compilation failed!!" << std::endl;
+			//retrieve Error message from ID3DBlobs
+			if (errorMsgBlobList.at(i)->GetBufferPointer() != 0)
+			{
+				std::string errorStr((char*)errorMsgBlobList.at(i)->GetBufferPointer(), errorMsgBlobList.at(i)->GetBufferSize());
+				std::cout << errorStr << std::endl << std::endl;
+			}
+			break;
+		}
+		else
+		{
+			std::cout << "shader compilation success!! code size :" << outCompiledShaderCode.at(i)->GetBufferSize()
+				<< " bytes." << std::endl << std::endl;
+		}
+	}
+
+	return true;
+}
+
+bool IEffectCompiler::mFunction_ShaderReflection(const std::vector<N_Shader>& shaderInfoList, const std::vector<ID3DBlob*>& compiledShaderCode)
+{
+	IShaderReflector analyzer;
+	analyzer.Analyze(compiledShaderCode);
+	return true;
+}
+
+bool IEffectCompiler::mFunction_OutputCompiledEffectFile()
+{
 	return true;
 }

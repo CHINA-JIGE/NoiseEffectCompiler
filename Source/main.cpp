@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
 
 	//compile
 	if(compiler.Compile())std::cout<<"Compilation successfully completed!!!"<<std::endl;
+	else std::cout << "Compilation Failed!!" << std::endl;
 
 	system("pause");
 

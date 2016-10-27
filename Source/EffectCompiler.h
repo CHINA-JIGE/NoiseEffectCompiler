@@ -24,12 +24,13 @@ std::cout<<msg<<std::endl;\
 #include <algorithm>
 #include <unordered_set>
 #include <unordered_map>
-#include "d3d11.h"
-#include "d3dcompiler.h"
+#include <d3d11shader.h>
+#include <D3DCompiler.h>
 #include "IFactory.h" 
 #include "_ShaderInclude.h"
 #include "EffectTokenizer.h"
 #include "EffectParser.h"
+#include "ShaderReflector.h"
 
 namespace NoiseEffectCompiler
 {
@@ -52,12 +53,16 @@ namespace NoiseEffectCompiler
 
 		bool		mFunction_ParseEffect(std::vector<N_Shader>& outShaderList,std::vector<std::string>& outSourceFileList);
 
+		bool		mFunction_CompileHLSL(const std::vector<N_Shader>& shaderList, const std::vector<std::string>& sourceFileList, std::vector<ID3DBlob*>& outCompiledShaderCode);
+
+		bool		mFunction_ShaderReflection(const std::vector<N_Shader>& shaderInfoList,const std::vector<ID3DBlob*>& compiledShaderCode);
+
+		bool		mFunction_OutputCompiledEffectFile();
+
 		std::string mTargetFileName;
 		std::string mEffectFileName;
 		std::vector<unsigned char> mEffectFileBuffer;
-
-		ID3D11ShaderReflection* pSR;
-
+		std::string mRelativePath;
 
 	};
 
