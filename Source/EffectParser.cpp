@@ -14,16 +14,17 @@ using namespace NoiseEffectCompiler;
 /***********************EFFECT   PARSER*****************************/
 
 
-NoiseEffectCompiler::IEffectParser::IEffectParser()
+IEffectParser::IEffectParser()
 	:mTokenIndex(0)
 {
 
 }
 
-bool  NoiseEffectCompiler::IEffectParser::Parse( std::vector<N_TokenInfo>&& tokenList)
+bool  IEffectParser::Parse( std::vector<N_TokenInfo>&& tokenList,IEffect* pEffect)
 {
 	mTokenList = tokenList;
 	mTokenIndex = 0;
+	m_pEffect = pEffect;
 
 	while (mTokenIndex < tokenList.size())
 	{
@@ -46,19 +47,23 @@ bool  NoiseEffectCompiler::IEffectParser::Parse( std::vector<N_TokenInfo>&& toke
 		}
 
 		case TK_DELIMITER:
-			mFunction_ReportError("unexpected delimiter  !");//skip
+			mFunction_ReportError("unexpected delimiter '" + currToken.content + "'");
+			return false;
 			break;
 
 		case TK_IDENTIFIER:
-			mFunction_ReportError("unexpected identifier !");//skip
+			mFunction_ReportError("unexpected identifier '" + currToken.content + "'");
+			return false;
 			break;
 
 		case TK_LITERAL_STR:
-			mFunction_ReportError("unexpected literal string !");//skip
+			mFunction_ReportError("unexpected literal string '" + currToken.content + "'");
+			return false;
 			break;
 
 		case TK_NUMBER:
-			mFunction_ReportError("unexpected number !"); //skip
+			mFunction_ReportError("unexpected number '" + currToken.content + "'");
+			return false;
 			break;
 
 		case TK_KEYWORD:
@@ -76,22 +81,23 @@ bool  NoiseEffectCompiler::IEffectParser::Parse( std::vector<N_TokenInfo>&& toke
 	return true;
 }
 
-void NoiseEffectCompiler::IEffectParser::GetHLSLFileList(std::vector<std::string>& outFileList)
+void IEffectParser::GetHLSLFileList(std::vector<std::string>& outFileList)
 {
 	outFileList = mSourceFileList;
 }
 
-void NoiseEffectCompiler::IEffectParser::GetCompilationPlan(std::vector<N_Shader>& outShaderList)
+void IEffectParser::GetCompilationPlan(std::vector<N_SHADER_DESC>& outShaderList)
 {
 	for (auto s : mUniqueShaderTable)
 	{
-		outShaderList.push_back(s);
+		outShaderList.push_back(s.second);
 	}
 }
 
+
 /*********************** P R I V A T E *****************************/
 
-bool NoiseEffectCompiler::IEffectParser::mFunction_ParseTechnique()
+bool IEffectParser::mFunction_ParseTechnique()
 {
 	//new technique
 	ITechnique* pTech = nullptr;
@@ -103,7 +109,7 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_ParseTechnique()
 	if (mFunction_MatchCurrentToken(TK_IDENTIFIER))
 	{
 		//create ITechnique with NAME (identifier)
-		pTech = mEffect.CreateObject(mTokenList.at(mTokenIndex).content);
+		pTech = m_pEffect->CreateObject(mTokenList.at(mTokenIndex).content);
 	}
 	else
 	{
@@ -153,7 +159,7 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_ParseTechnique()
 	return true;
 }
 
-bool NoiseEffectCompiler::IEffectParser::mFunction_ParsePass(ITechnique* pFatherTechnique)
+bool IEffectParser::mFunction_ParsePass(ITechnique* pFatherTechnique)
 {
 	//new pass
 	IPass* pPass;
@@ -229,10 +235,10 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_ParsePass(ITechnique* pFather
 	return true;
 }
 
-bool NoiseEffectCompiler::IEffectParser::mFunction_ParseShaderConfig(IPass* pFatherPass, NOISE_SHADER_TYPE st)
+bool IEffectParser::mFunction_ParseShaderConfig(IPass* pFatherPass, NOISE_SHADER_TYPE st)
 {
 	//new shader
-	N_Shader shader;
+	N_SHADER_DESC shader;
 
 	//****************PATTERN*************************
 	//	[Delimiter - '(' ] [Identifier, entryPoint ] [ Delimiter, ',' ] [KEYWORD, shaderVersion ]	[Delimiter - ')' ] 
@@ -306,9 +312,9 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_ParseShaderConfig(IPass* pFat
 		}
 
 		//add to need compiling list (unique shader list)
-		if (mUniqueShaderTable.find(shader) == mUniqueShaderTable.end())
+		if (mUniqueShaderTable.find(shader.GetUID()) == mUniqueShaderTable.end())
 		{
-			mUniqueShaderTable.insert(shader);
+			mUniqueShaderTable.insert(std::make_pair(shader.GetUID(),shader));
 		}
 
 		return true;
@@ -320,7 +326,7 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_ParseShaderConfig(IPass* pFat
 	}
 }
 
-bool NoiseEffectCompiler::IEffectParser::mFunction_ParseIncludeInstruction()
+bool IEffectParser::mFunction_ParseIncludeInstruction()
 {
 	++mTokenIndex;
 	if (mFunction_MatchCurrentToken(TK_LITERAL_STR))
@@ -335,7 +341,7 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_ParseIncludeInstruction()
 	}
 }
 
-bool NoiseEffectCompiler::IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE type)
+bool IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE type)
 {
 	const auto& token = mTokenList.at(mTokenIndex);
 
@@ -345,7 +351,7 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE 
 		return false;
 }
 
-bool NoiseEffectCompiler::IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE type, const std::string & content)
+bool IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE type, const std::string & content)
 {
 	const auto& token = mTokenList.at(mTokenIndex);
 	if (token.type == type && token.content == content)
@@ -358,42 +364,9 @@ bool NoiseEffectCompiler::IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE 
 	}
 }
 
-void NoiseEffectCompiler::IEffectParser::mFunction_ReportError(const std::string & msg)
+void IEffectParser::mFunction_ReportError(const std::string & msg)
 {
 	std::cout<<"LINE :"<< mTokenList.at(mTokenIndex).line <<std::endl
 		<<"---Syntax Error :"<< msg << std::endl;
 }
 
-
-
-/***********************PASS *****************************/
-
-void NoiseEffectCompiler::IPass::SetVS(N_Shader shader)
-{
-	mVS = shader;
-}
-
-void NoiseEffectCompiler::IPass::SetGS(N_Shader shader)
-{
-	mGS = shader;
-}
-
-void NoiseEffectCompiler::IPass::SetPS(N_Shader shader)
-{
-	mPS = shader;
-}
-
-void NoiseEffectCompiler::IPass::GetVS(N_Shader & outShader)
-{
-	outShader = mVS;
-}
-
-void NoiseEffectCompiler::IPass::GetGS(N_Shader & outShader)
-{
-	outShader = mGS;
-}
-
-void NoiseEffectCompiler::IPass::GetPS(N_Shader & outShader)
-{
-	outShader = mPS;
-}

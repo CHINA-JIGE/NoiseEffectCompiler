@@ -20,6 +20,9 @@
     <Filter Include="ShaderReflector">
       <UniqueIdentifier>{408578fc-ec78-47c1-812e-11245c8d5aae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FileWriter">
+      <UniqueIdentifier>{2bcc19ea-b0c6-42eb-b47c-c937faf2164f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EffectTokenizer.h">
@@ -40,6 +43,12 @@
     <ClInclude Include="ShaderReflector.h">
       <Filter>ShaderReflector</Filter>
     </ClInclude>
+    <ClInclude Include="EffectTypeDecl.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="FileWriter.h">
+      <Filter>FileWriter</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -59,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="ShaderReflector.cpp">
       <Filter>ShaderReflector</Filter>
+    </ClCompile>
+    <ClCompile Include="FileWriter.cpp">
+      <Filter>FileWriter</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

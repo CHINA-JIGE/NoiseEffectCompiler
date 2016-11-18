@@ -25,26 +25,46 @@ bool IEffectCompiler::ParseCommandLine(int argc, char* argv[])
 bool IEffectCompiler::Compile()
 {
 	//---------------------------
-	std::cout << "Effect Parsing Stage...." << std::endl;
+	std::cout << "Effect parsing stage...." << std::endl;
 
-	std::vector<N_Shader> shaderList;
+	std::vector<N_SHADER_DESC> shaderDescList;
+	std::vector<N_UNIQUE_SHADER> shaderList;
 	std::vector<std::string> sourceFileList;
 
-	if (!mFunction_ParseEffect(shaderList,sourceFileList))return false;
+	if (!mFunction_ParseEffect(shaderDescList,sourceFileList))return false;
 	
-	std::cout << "Effect Parsing Stage Completed." << std::endl;
+	std::cout << "Effect parsing stage completed." << std::endl;
 	
 	//---------------------------
-	std::vector<ID3DBlob*> compiledCodeBlobList(shaderList.size());
-	if (!mFunction_CompileHLSL(shaderList, sourceFileList, compiledCodeBlobList))return false;
+	std::cout << "HSLS compilation stage ...." << std::endl;
 
-	std::cout << "HSLS Compilation Stage Completed." << std::endl;
+	if (!mFunction_CompileHLSL(shaderDescList, shaderList,sourceFileList))return false;
+
+	std::cout << "HSLS compilation stage Completed ...." << std::endl;
 
 	//------------------------------
-	//D3D Reflection
-	if (!mFunction_ShaderReflection(compiledCodeBlobList))return false;
+	std::cout << "Shader resource binding analysis Stage ...." << std::endl;
+
+	if (!mFunction_ShaderReflection(shaderList))return false;
+
+	std::cout << "Shader resource binding analysis stage Completed...." << std::endl;
+	//-----------------------------
+	
+	if (!mFunction_CompleteShaderDescOfEffectHierarchy())return false;
+
+	//-----------------------------
+	std::cout << "Start  writing compiled effect file ...." << std::endl;
+
+	if (!mFunction_OutputCompiledEffectFile())return false;
+
+	std::cout << "Compiled file output completed." << std::endl;
 
 	return true;
+}
+
+IEffect * IEffectCompiler::GetEffectInterface()
+{
+	return &mEffect;
 }
 
 /******************************************************
@@ -172,24 +192,23 @@ bool IEffectCompiler::mFunction_LoadFiles()
 	return true;
 }
 
-bool IEffectCompiler::mFunction_ParseEffect(std::vector<N_Shader>& outShaderList, std::vector<std::string>& outSourceFileList)
+bool IEffectCompiler::mFunction_ParseEffect(std::vector<N_SHADER_DESC>& outShaderList, std::vector<std::string>& outSourceFileList)
 {
 	//tokenize
-	NoiseEffectCompiler::IEffectTokenizer tokenizer;
-	if (!tokenizer.Tokenize(mEffectFileBuffer)) { return false; }
+
+	if (!mTokenizer.Tokenize(mEffectFileBuffer)) { return false; }
 	std::vector<N_TokenInfo> tokenList;
-	tokenizer.GetTokenList(tokenList);
+	mTokenizer.GetTokenList(tokenList);
 
 	//parse token stream
-	NoiseEffectCompiler:: IEffectParser parser;
-	if (!parser.Parse(std::move(tokenList))) { return false; }
-	parser.GetCompilationPlan(outShaderList);
-	parser.GetHLSLFileList(outSourceFileList);
+	if (!mParser.Parse(std::move(tokenList), &mEffect)) { return false; }
+	mParser.GetCompilationPlan(outShaderList);
+	mParser.GetHLSLFileList(outSourceFileList);
 
 	return true;
 }
 
-bool IEffectCompiler::mFunction_CompileHLSL(const std::vector<N_Shader>& shaderList, const std::vector<std::string>& sourceFileList, std::vector<ID3DBlob*>& outCompiledShaderCode)
+bool IEffectCompiler::mFunction_CompileHLSL(std::vector<N_SHADER_DESC>& in_uniqueShaderDescList, std::vector<N_UNIQUE_SHADER>& out_uniqueShaderList, const std::vector<std::string>& sourceFileList)
 {
 
 	//only reserve "#include" + sourceFile in this intermediate file for d3dcompile to compile hlsl
@@ -201,12 +220,15 @@ bool IEffectCompiler::mFunction_CompileHLSL(const std::vector<N_Shader>& shaderL
 
 	//------------COMPILE HLSL---------------
 	NoiseEffectCompiler::IShaderInclude shaderInclude(mRelativePath);
-	std::vector<ID3DBlob*> errorMsgBlobList(shaderList.size());
+	std::vector<ID3DBlob*> errorMsgBlobList(in_uniqueShaderDescList.size());
 	std::wstring tmpRelativePathW(mRelativePath.begin(), mRelativePath.end());
 
-	for (UINT i = 0;i<shaderList.size();i++)
+
+	for (auto& sdDesc: in_uniqueShaderDescList)
 	{
-		auto & sd = shaderList.at(i);
+		N_UNIQUE_SHADER sd;
+
+		errorMsgBlobList.push_back(nullptr);
 
 		std::cout << "Compile Shader--- EntryPoint:" << sd.entryPoint << ",targetVersion:" << sd.version << std::endl;
 
@@ -228,9 +250,9 @@ bool IEffectCompiler::mFunction_CompileHLSL(const std::vector<N_Shader>& shaderL
 			sd.entryPoint.c_str(),
 			sd.version.c_str(),
 			D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR,
-			NULL,//we're not compiling an effect, set to null
-			&outCompiledShaderCode.at(i),
-			&errorMsgBlobList.at(i)
+			NULL,//we're not compiling an fx effect, set to null
+			&sd.pBlob,//compiled binary code saved to corresponding shader
+			&errorMsgBlobList.back()
 		);
 
 		//check if HLSL compilation failed
@@ -238,31 +260,95 @@ bool IEffectCompiler::mFunction_CompileHLSL(const std::vector<N_Shader>& shaderL
 		{
 			std::cout << "shader compilation failed!!" << std::endl;
 			//retrieve Error message from ID3DBlobs
-			if (errorMsgBlobList.at(i)->GetBufferPointer() != 0)
+			if (errorMsgBlobList.back()->GetBufferPointer() != nullptr)
 			{
-				std::string errorStr((char*)errorMsgBlobList.at(i)->GetBufferPointer(), errorMsgBlobList.at(i)->GetBufferSize());
+				std::string errorStr((char*)errorMsgBlobList.back()->GetBufferPointer(), errorMsgBlobList.back()->GetBufferSize());
 				std::cout << errorStr << std::endl << std::endl;
 			}
 			break;
 		}
 		else
 		{
-			std::cout << "shader compilation success!! code size :" << outCompiledShaderCode.at(i)->GetBufferSize()
+			std::cout << "shader compilation success!! code size :" << sd.pBlob->GetBufferSize()
 				<< " bytes." << std::endl << std::endl;
 		}
+
+		out_uniqueShaderList.push_back(sd);
 	}
 
 	return true;
 }
 
-bool IEffectCompiler::mFunction_ShaderReflection(const std::vector<N_Shader>& shaderInfoList, const std::vector<ID3DBlob*>& compiledShaderCode)
+bool IEffectCompiler::mFunction_ShaderReflection(std::vector<N_UNIQUE_SHADER>& in_out_uniqueShaderList)
 {
-	IShaderReflector analyzer;
-	analyzer.Analyze(compiledShaderCode);
+	mShaderReflector.Reflect(in_out_uniqueShaderList);
+
+	//build a unique shader hash table
+	for (auto& s : in_out_uniqueShaderList)
+	{
+		mUniqueShaderTable[s.GetUID()] = s;
+	}
+
 	return true;
+}
+
+bool IEffectCompiler::mFunction_CompleteShaderDescOfEffectHierarchy()
+{
+	//up to now, all unique data block in global data pool are acquired, 
+	//but they need to be bound to each pass/shader in the Effect Hierarchy by names.
+
+	//traverse every pass
+	UINT techCount = mEffect.GetObjectCount();
+	
+	for (UINT i = 0;i < techCount;++i)
+	{
+		ITechnique* pTech = mEffect.GetObjectPtr(i);
+		UINT passCount = pTech->GetObjectCount();
+
+		for (UINT j = 0;j < passCount; ++j)
+		{
+			IPass* pPass = pTech->GetObjectPtr(j);
+
+			// entry/version information in an Effect has been generated by parser.
+			// Now we have to fetch complete data from unique shader table and copy
+			// to shaders in effect hierarchy
+			const UINT maxShaderCountInPass = 3;
+			N_SHADER_DESC* pShaderDesc[maxShaderCountInPass] = { pPass->GetVS(), pPass->GetGS(),pPass->GetPS() };
+
+			for (UINT k = 0;k < maxShaderCountInPass;++k)
+			{
+				//current shader not in use, continue to next shader
+				if (pShaderDesc[k] == nullptr)continue;
+
+				//only copy NAME of data block to effect hierarchy
+				auto pShader = mUniqueShaderTable.find(pShaderDesc[k]->GetUID());
+				if (pShader != mUniqueShaderTable.end())
+				{
+					for (auto & cb : pShader->second.cbInfo)
+						pShaderDesc[k]->cbNames.push_back(cb.name);
+
+					for (auto & tb : pShader->second.tbInfo)
+						pShaderDesc[k]->tbNames.push_back(tb.name);
+
+					for (auto & tex : pShader->second.texInfo)
+						pShaderDesc[k]->texNames.push_back(tex.name);
+
+					for (auto & sp : pShader->second.cbInfo)
+						pShaderDesc[k]->samplerNames.push_back(sp.name);
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 bool IEffectCompiler::mFunction_OutputCompiledEffectFile()
 {
+	mFileWriter.OutputBinary(
+		mTargetFileName,
+
+		&mEffect);
+
 	return true;
 }

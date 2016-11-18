@@ -121,7 +121,7 @@ Texture2D gDiffuseMap;
 Texture2D gNormalMap;
 Texture2D gSpecularMap;
 TextureCube gCubeMap;
-
+
 SamplerState samplerDefault
 {
 	Filter = LINEAR;

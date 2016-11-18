@@ -11,107 +11,6 @@
 namespace NoiseEffectCompiler
 {
 
-		struct N_Shader
-		{
-			std::string entryPoint;
-			std::string version;
-		};
-
-		//used in Unique shader unordered_set
-		struct IShaderHasher
-		{
-			//functor
-			size_t    operator()(N_Shader s) const
-			{
-				//std::hash<std::string>()() :::: invoke  () operator functor 
-				//0xAAAAAAAA is the mask of 1,3,5,7,9... bit from L to R
-				//0x55555555 is the mask of 2,4,6,8,10... bit from L to R
-				return
-					(std::hash<std::string>()(s.entryPoint) & 0xAAAAAAAA) |
-					(std::hash<std::string>()(s.version) & 0x55555555);
-			}
-		};
-
-		//used in Unique shader unordered_set
-		struct IShaderComparator
-		{
-			bool operator()(const N_Shader& lhs,const N_Shader& rhs) const
-			{
-				return (lhs.entryPoint == rhs.entryPoint) && (lhs.version == rhs.version);
-			}
-		};
-
-
-
-		//--------------------HIERARCHY----------------
-		//	Effect
-		//		|---Technique
-		//		|			|---Pass
-		//		|			|		|----VertexShader(crucial)
-		//		|			|		|----PixelShader(crucial)
-		//		|			|		|----GeometryShader(optional)
-		//		|			|---Pass
-		//		|			|		|----VertexShader(crucial)
-		//		|			|		|----PixelShader(crucial)
-		//		|			|		|----GeometryShader(optional)
-		//		|			|  ...................
-		//		|
-		//		|---Technique
-		//		|			|---Pass
-		//		|			|		|   ...................
-		//		|			|   ...................
-		//		|
-		//		| ...................
-		//-----------------------------
-
-		class IPass
-		{
-		public:
-
-			void SetVS(N_Shader shader);
-
-			void SetGS(N_Shader shader);
-
-			void SetPS(N_Shader shader);
-
-			void GetVS(N_Shader& outShader);
-
-			void GetGS(N_Shader& outShader);
-
-			void GetPS(N_Shader& outShader);
-
-		private:
-
-			N_Shader mVS;
-			N_Shader mGS;
-			N_Shader mPS;
-
-		};
-
-
-		class ITechnique : public IFactory<IPass>
-		{
-		public:
-
-			//theoretically, pass count won't be limited,
-			//but too many pass could cause performance overhead
-			ITechnique() :IFactory<IPass>(32) {};
-
-		private:
-		};
-
-
-		class IEffect : public IFactory<ITechnique>
-		{
-		public:
-
-			//Root interface of Effect Framework, owns Technique child object
-			//for a specific render effect
-			IEffect() :IFactory<ITechnique>(100000) {};
-
-		private:
-
-		};
 
 
 		class IEffectParser
@@ -120,11 +19,11 @@ namespace NoiseEffectCompiler
 
 			IEffectParser();
 
-			bool Parse(std::vector<N_TokenInfo>&& tokenList);//parse Effect (many techiniques)
+			bool Parse(std::vector<N_TokenInfo>&& tokenList, IEffect* pEffect);//parse Effect (many techiniques)
 
 			void GetHLSLFileList(std::vector<std::string>& outFileList);
 
-			void GetCompilationPlan(std::vector<N_Shader>& outShaderList);//shaders that need compiling
+			void GetCompilationPlan(std::vector<N_SHADER_DESC>& outUniqueShaderList);//shaders that need compiling
 
 		private:
 
@@ -155,9 +54,8 @@ namespace NoiseEffectCompiler
 
 			std::vector<std::string> mSourceFileList;//out
 
-			std::unordered_set<N_Shader,IShaderHasher,IShaderComparator> mUniqueShaderTable;//out
+			std::unordered_map<std::string,N_SHADER_DESC> mUniqueShaderTable;//out
 
-			IEffect		mEffect;//one file for one Effect
-
+			IEffect* m_pEffect;
 		};
 }

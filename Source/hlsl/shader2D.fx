@@ -27,7 +27,6 @@ cbuffer cbDrawText2D
 Texture2D g2D_DiffuseMap;
 
 
-
 //----------------------------------Draw 2D Lines/Points/Triangles----------------------------------
 VS_OUTPUT_SIMPLE VS_Solid2D(VS_INPUT_SIMPLE input)
 {

@@ -10,7 +10,6 @@
 
 namespace NoiseEffectCompiler
 {
-	typedef unsigned char uchar;
 
 	bool isCharDigit(uchar c);
 

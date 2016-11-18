@@ -37,7 +37,7 @@ bool NoiseEffectCompiler::IEffectTokenizer::Tokenize(const std::vector<unsigned 
 	mTokenList.clear();
 	mAnnotationList.clear();
 	mLexerState = LS_NORMAL;
-	mLineNumberInSource = 0;
+	mLineNumberInSource = 1;
 
 	//start iteration
 	bool isSucceeded = true;
@@ -80,7 +80,19 @@ void NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateTransition(const
 	static std::string errorMsg = "";
 
 	//trace current LINE number in source file to present more error message
-	if (c == '\n')++mLineNumberInSource;
+	if (c == '\n') { ++mLineNumberInSource; }
+
+	//encounter file end
+	if (c == '\0') { mLexerState = LS_NORMAL;return; }
+
+	//encounter unrecognized char (might be Unicode?)
+	if (isascii(c) == 0) 
+	{
+		mLexerState = LS_ERROR;
+		errorMsg = "Unrecognized Character '";
+		errorMsg.push_back(c);errorMsg += " ' Found! (Non-Ascii char?)";
+		return;
+	}
 
 	//some common state transitions which interrupt  many token generation state
 	auto func_commonTransition=[&]()->bool
@@ -100,7 +112,6 @@ void NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateTransition(const
 		else if (c == '\"') { mLexerState = LS_LITERAL_STRING_NEWTOKEN; }// for the start of a literal string
 		else if (isCharLetterUnderline(c)) { mLexerState = LS_IDENTIFIER_NEWTOKEN; }//identifier begin with _ or letter
 		else if (isCharDigit(c)) { mLexerState = LS_NUMBER_NEWTOKEN; }
-		else if(c=='\0'){ } //NULL , EOF , do nothing
 		else { mLexerState = LS_ERROR; errorMsg = "Unrecognized Character Found!"; }
 		break;
 
@@ -343,7 +354,7 @@ bool NoiseEffectCompiler::IEffectTokenizer::mFunction_LexerStateMachineOutput(co
 		case 't':escapedChar = '\t';break;
 		case 'v':escapedChar = '\v';break;
 		case '0':escapedChar = '\0';break;
-		case '?':escapedChar = '\"';break;
+		case '?':escapedChar = '\?';break;
 		// \" \' \\ are not neccessary
 		}
 		mTokenList.back().content.push_back(escapedChar);

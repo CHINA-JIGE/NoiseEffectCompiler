@@ -12,7 +12,7 @@ Technique defaultDraw
 		VS(VS_DefaultDraw , vs_5_0);//entryPoint , compile version(5_0 for shader model 5.0)
 		PS(PS_DefaultDraw , ps_5_0);
 	}
-}
+} 
 
 Technique DrawSolid3D
 {
@@ -25,9 +25,18 @@ Technique DrawSolid3D
 
 Technique DrawSolid2D
 {
-	Pass Pass0
+	Pass pass0
 	{
 		VS(VS_Solid2D, vs_5_0);
 		PS(PS_Solid2D, ps_5_0);
+	}
+}
+
+Technique DrawTextured2D
+{
+	Pass pass0
+	{
+		VS(VS_Textured2D , vs_5_0);
+		PS(PS_Textured2D , ps_5_0);
 	}
 }
