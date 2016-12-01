@@ -14,6 +14,8 @@
 #pragma once
 #pragma warning (disable : 4005)//macro redefined WIN8 SDKºÍDXSDK
 
+#define NOISE_EFFECT_COMPILER_DEBUG
+
 #define ERROR_MSG(msg)\
 std::cout<<msg<<std::endl;\
 
@@ -62,7 +64,7 @@ namespace NoiseEffectCompiler
 
 		bool		mFunction_ShaderReflection( std::vector<N_UNIQUE_SHADER>& in_out_uniqueShaderList);
 
-		bool		mFunction_CompleteShaderDescOfEffectHierarchy();
+		bool		mFunction_FillShaderDescOfEffectHierarchy();
 
 		bool		mFunction_OutputCompiledEffectFile();
 

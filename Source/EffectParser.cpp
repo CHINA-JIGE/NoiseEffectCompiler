@@ -341,7 +341,7 @@ bool IEffectParser::mFunction_ParseIncludeInstruction()
 	}
 }
 
-bool IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE type)
+bool IEffectParser::mFunction_MatchCurrentToken(N_TOKEN_TYPE type)
 {
 	const auto& token = mTokenList.at(mTokenIndex);
 
@@ -351,7 +351,7 @@ bool IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE type)
 		return false;
 }
 
-bool IEffectParser::mFunction_MatchCurrentToken(TOKEN_TYPE type, const std::string & content)
+bool IEffectParser::mFunction_MatchCurrentToken(N_TOKEN_TYPE type, const std::string & content)
 {
 	const auto& token = mTokenList.at(mTokenIndex);
 	if (token.type == type && token.content == content)

@@ -90,11 +90,13 @@ namespace NoiseEffectCompiler
 		std::vector<N_SAMPLER_INFO> samplerInfo;
 		ID3DBlob* pBlob;
 
-		std::string GetUID() { return entryPoint + "@@" + version; }
+		//to generate unique shader, which is identified by uid
+		std::string GetUID()const  { return entryPoint + "@@" + version; }
 	};
 
 	struct N_SHADER_DESC
 	{
+		//only store names to provide a way to reference resources from global pool
 		std::string entryPoint;
 		std::string version;
 		std::vector<std::string> cbNames;
@@ -102,7 +104,8 @@ namespace NoiseEffectCompiler
 		std::vector<std::string> texNames;
 		std::vector<std::string> samplerNames;
 
-		std::string GetUID() { return entryPoint + "@@" + version; }
+		//to generate unique shader, which is identified by uid
+		std::string GetUID()const  { return entryPoint + "@@" + version; }
 	};
 
 
@@ -179,7 +182,7 @@ namespace NoiseEffectCompiler
 	//-----	create resources/buffers in unique Global Resource Pool
 	const uchar NOISE_EBI_NEW_CB = 10;
 	const uchar NOISE_EBI_NEW_TB = 11;
-	const uchar NOISE_EBI_NEW_SHADER_RESOURCE = 12;
+	const uchar NOISE_EBI_NEW_TEXTURE = 12;
 	const uchar NOISE_EBI_NEW_SAMPLER = 13;
 	const uchar NOISE_EBI_NEW_SHADER_BINARY_BLOCK = 14;
 
@@ -197,7 +200,7 @@ namespace NoiseEffectCompiler
 	//Begin of : new technique block
 	const uchar NOISE_EBI_NEW_TECHNIQUE = 1;
 
-	//Desc: EBI(1 byte) + Shaders Count(2 bytes) +  Pass Name(string)+ sub-block
+	//Desc: EBI(1 byte) +  Pass Name(string)+ sub-block
 	//Father: Technique Block
 	//Begin of : new pass block
 	const uchar NOISE_EBI_NEW_PASS = 2;
@@ -216,7 +219,7 @@ namespace NoiseEffectCompiler
 	//Father : Shader Blocks
 	//Begin of: names of bound resources 
 	//----- resource/buffers can be REFERENCED BY NAME in global resource pool
-	//----- and this resource belong to current shader
+	//----- and these resource (names) belong to current shader
 	const uchar NOISE_EBI_NAME_CB = 60;
 	const uchar NOISE_EBI_NAME_TB = 61;
 	const uchar NOISE_EBI_NAME_TEXTURE = 62;

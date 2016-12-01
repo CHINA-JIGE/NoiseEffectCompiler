@@ -44,9 +44,9 @@ namespace NoiseEffectCompiler
 
 			bool mFunction_ParseShaderConfig(IPass* pFatherPass, NOISE_SHADER_TYPE st);
 
-			bool mFunction_MatchCurrentToken(TOKEN_TYPE type);
+			bool mFunction_MatchCurrentToken(N_TOKEN_TYPE type);
 
-			bool	mFunction_MatchCurrentToken(TOKEN_TYPE type, const std::string& content);
+			bool	mFunction_MatchCurrentToken(N_TOKEN_TYPE type, const std::string& content);
 
 			void mFunction_ReportError(const std::string& msg);
 

@@ -50,7 +50,7 @@ bool IEffectCompiler::Compile()
 	std::cout << "Shader resource binding analysis stage Completed...." << std::endl;
 	//-----------------------------
 	
-	if (!mFunction_CompleteShaderDescOfEffectHierarchy())return false;
+	if (!mFunction_FillShaderDescOfEffectHierarchy())return false;
 
 	//-----------------------------
 	std::cout << "Start  writing compiled effect file ...." << std::endl;
@@ -213,7 +213,6 @@ bool IEffectCompiler::mFunction_CompileHLSL(std::vector<N_SHADER_DESC>& in_uniqu
 
 	//only reserve "#include" + sourceFile in this intermediate file for d3dcompile to compile hlsl
 	//std::string intermediateUncompiledSource;
-	std::cout << "HSLS Compilation Stage...." << std::endl;
 
 	std::string intermediateUncompiledSource("");
 	for (auto& sf : sourceFileList)intermediateUncompiledSource += ("#include \"" + sf + "\"\n");
@@ -227,6 +226,8 @@ bool IEffectCompiler::mFunction_CompileHLSL(std::vector<N_SHADER_DESC>& in_uniqu
 	for (auto& sdDesc: in_uniqueShaderDescList)
 	{
 		N_UNIQUE_SHADER sd;
+		sd.entryPoint = sdDesc.entryPoint;
+		sd.version = sdDesc.version;
 
 		errorMsgBlobList.push_back(nullptr);
 
@@ -281,6 +282,7 @@ bool IEffectCompiler::mFunction_CompileHLSL(std::vector<N_SHADER_DESC>& in_uniqu
 
 bool IEffectCompiler::mFunction_ShaderReflection(std::vector<N_UNIQUE_SHADER>& in_out_uniqueShaderList)
 {
+	//resource binding information has been completed in this "Reflect" function
 	mShaderReflector.Reflect(in_out_uniqueShaderList);
 
 	//build a unique shader hash table
@@ -292,7 +294,7 @@ bool IEffectCompiler::mFunction_ShaderReflection(std::vector<N_UNIQUE_SHADER>& i
 	return true;
 }
 
-bool IEffectCompiler::mFunction_CompleteShaderDescOfEffectHierarchy()
+bool IEffectCompiler::mFunction_FillShaderDescOfEffectHierarchy()
 {
 	//up to now, all unique data block in global data pool are acquired, 
 	//but they need to be bound to each pass/shader in the Effect Hierarchy by names.
@@ -340,14 +342,18 @@ bool IEffectCompiler::mFunction_CompleteShaderDescOfEffectHierarchy()
 		}
 	}
 
-	return false;
+	return true;
 }
 
 bool IEffectCompiler::mFunction_OutputCompiledEffectFile()
 {
-	mFileWriter.OutputBinary(
-		mTargetFileName,
+	std::vector<N_UNIQUE_SHADER> uniqueShaderList;
 
+	for (auto& e : mUniqueShaderTable)uniqueShaderList.push_back(e.second);
+
+	mFileWriter.OutputBinaryToFile(
+		mTargetFileName,
+		uniqueShaderList,
 		&mEffect);
 
 	return true;

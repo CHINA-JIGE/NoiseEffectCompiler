@@ -23,7 +23,7 @@ namespace NoiseEffectCompiler
 
 	bool isCharSpaceTabNextline(uchar c);
 
-	enum TOKEN_TYPE
+	enum N_TOKEN_TYPE
 	{
 		TK_ANNOTATION=0,
 		TK_DELIMITER=1,
@@ -39,7 +39,7 @@ namespace NoiseEffectCompiler
 		UINT line;//Line number in source file
 		UINT byteOffset;//byte pos in file
 		UINT byteSize;
-		TOKEN_TYPE type;
+		N_TOKEN_TYPE type;
 		std::string content;
 	};
 
