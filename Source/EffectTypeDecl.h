@@ -94,6 +94,7 @@ namespace NoiseEffectCompiler
 		std::string GetUID()const  { return entryPoint + "@@" + version; }
 	};
 
+
 	struct N_SHADER_DESC
 	{
 		//only store names to provide a way to reference resources from global pool
@@ -109,7 +110,7 @@ namespace NoiseEffectCompiler
 	};
 
 
-	class IPass
+	class IPassDesc
 	{
 	public:
 
@@ -135,25 +136,25 @@ namespace NoiseEffectCompiler
 	};
 
 
-	class ITechnique : public IFactory<IPass>
+	class ITechniqueDesc : public IFactory<IPassDesc>
 	{
 	public:
 
 		//theoretically, pass count won't be limited,
 		//but too many pass could cause performance overhead
-		ITechnique() :IFactory<IPass>(32) {};
+		ITechniqueDesc() :IFactory<IPassDesc>(32) {};
 
 	private:
 	};
 
 
-	class IEffect : public IFactory<ITechnique>
+	class IEffectDesc : public IFactory<ITechniqueDesc>
 	{
 	public:
 
 		//Root interface of Effect Framework, owns Technique child object
 		//for a specific render effect
-		IEffect() :IFactory<ITechnique>(100000) {};
+		IEffectDesc() :IFactory<ITechniqueDesc>(100000) {};
 
 	private:
 
@@ -172,14 +173,16 @@ namespace NoiseEffectCompiler
 	//Desc : 4 bytes header
 	//Father : Global
 	//Begin of : magic number
-	//-----used to recognized noiseEffect file
-	const UINT NOISE_EBI_MAGIC_NUMBER = 0xabcd1234;
+	//-----used to recognized noiseEffect file and indicate file version
+	//-----so that file loader can recognize file version to use appropriate scheme to load file
+	const UINT NOISE_EBI_MAGIC_NUMBER_VERSION_01 = 0xabcd1234;
 
 
 	//Desc: EBI(1 byte) + NAME(string) + binaryBlockSize(4 bytes) + binaryData (variable)
 	//Father : Global
 	//Begin of : new GLOBAL BLOCK
-	//-----	create resources/buffers in unique Global Resource Pool
+	//-----	create resources/buffers in unique Global Resource Pool (because many 
+	//----- resources might be repeatedly used)
 	const uchar NOISE_EBI_NEW_CB = 10;
 	const uchar NOISE_EBI_NEW_TB = 11;
 	const uchar NOISE_EBI_NEW_TEXTURE = 12;

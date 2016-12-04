@@ -19,7 +19,7 @@ namespace NoiseEffectCompiler
 
 			IEffectParser();
 
-			bool Parse(std::vector<N_TokenInfo>&& tokenList, IEffect* pEffect);//parse Effect (many techiniques)
+			bool Parse(std::vector<N_TokenInfo>&& tokenList, IEffectDesc* pEffect);//parse Effect (many techiniques)
 
 			void GetHLSLFileList(std::vector<std::string>& outFileList);
 
@@ -40,9 +40,9 @@ namespace NoiseEffectCompiler
 
 			bool mFunction_ParseTechnique();
 
-			bool mFunction_ParsePass(ITechnique* pFatherTechnique);
+			bool mFunction_ParsePass(ITechniqueDesc* pFatherTechnique);
 
-			bool mFunction_ParseShaderConfig(IPass* pFatherPass, NOISE_SHADER_TYPE st);
+			bool mFunction_ParseShaderConfig(IPassDesc* pFatherPass, NOISE_SHADER_TYPE st);
 
 			bool mFunction_MatchCurrentToken(N_TOKEN_TYPE type);
 
@@ -56,6 +56,6 @@ namespace NoiseEffectCompiler
 
 			std::unordered_map<std::string,N_SHADER_DESC> mUniqueShaderTable;//out
 
-			IEffect* m_pEffect;
+			IEffectDesc* m_pEffect;
 		};
 }

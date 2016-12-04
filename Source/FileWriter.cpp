@@ -13,7 +13,7 @@ using namespace NoiseEffectCompiler;
 bool IFileWriter::OutputBinaryToFile(
 	const std::string& outPath,
 	const std::vector<N_UNIQUE_SHADER>& uniqueShaderList,
-	const IEffect* pEffect)
+	const IEffectDesc* pEffect)
 {
 	//use information generated in previous stages, to output 
 	//---------------------INTERMEDIATE EFFECT BYTECODE-----------------------
@@ -31,7 +31,7 @@ bool IFileWriter::OutputBinaryToFile(
 	//Father : Global
 	//Begin of : magic number
 	//-----used to recognized noiseEffect file
-	mFunction_WriteBuffer(NOISE_EBI_MAGIC_NUMBER);
+	mFunction_WriteBuffer(NOISE_EBI_MAGIC_NUMBER_VERSION_01);
 
 	std::unordered_map<std::string,N_CBUFFER_INFO> uniqueCBs;
 	std::unordered_map<std::string,N_TBUFFER_INFO> uniqueTBs;
@@ -169,7 +169,7 @@ void IFileWriter::mFunction_WriteGlobalResources(
 
 }
 
-void IFileWriter::mFunction_WriteEffectHierarchy(const IEffect* pEffect)
+void IFileWriter::mFunction_WriteEffectHierarchy(const IEffectDesc* pEffect)
 {
 
 	//Desc: EBI(1 byte) + Technique Count(2 byte) +sub-block
@@ -184,7 +184,7 @@ void IFileWriter::mFunction_WriteEffectHierarchy(const IEffect* pEffect)
 		//Desc: EBI(1 byte) + Passes Count(2 bytes)  + Technique name(string)+ sub-block
 		//Father: Effect Block
 		//Begin of : new technique block
-		ITechnique* pTech = pEffect->GetObjectPtr(i);
+		ITechniqueDesc* pTech = pEffect->GetObjectPtr(i);
 		uint16_t passCount = pTech->GetObjectCount();
 		std::string techName = pEffect->GetUID(i);
 
@@ -198,7 +198,7 @@ void IFileWriter::mFunction_WriteEffectHierarchy(const IEffect* pEffect)
 		//Begin of : new pass block
 		for (uint16_t j = 0;j < passCount;++j)
 		{
-			IPass* pPass = pTech->GetObjectPtr(j);
+			IPassDesc* pPass = pTech->GetObjectPtr(j);
 			std::string passName = pTech->GetUID(j);
 
 			mFunction_WriteBuffer(NOISE_EBI_NEW_PASS);
@@ -209,7 +209,7 @@ void IFileWriter::mFunction_WriteEffectHierarchy(const IEffect* pEffect)
 
 }
 
-void  IFileWriter::mFunction_WritePass(IPass * pPass)
+void  IFileWriter::mFunction_WritePass(IPassDesc * pPass)
 {
 	N_SHADER_DESC* pVS = pPass->GetVS();
 	N_SHADER_DESC* pGS = pPass->GetGS();

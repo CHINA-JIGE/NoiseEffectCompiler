@@ -128,7 +128,9 @@
     <ClInclude Include="EffectTokenizer.h" />
     <ClInclude Include="EffectParser.h" />
     <ClInclude Include="EffectTypeDecl.h" />
+    <ClInclude Include="FileLoader.h" />
     <ClInclude Include="FileWriter.h" />
+    <ClInclude Include="IEffect.h" />
     <ClInclude Include="IFactory.h" />
     <ClInclude Include="EffectCompiler.h" />
     <ClInclude Include="ShaderReflector.h" />
@@ -137,7 +139,9 @@
   <ItemGroup>
     <ClCompile Include="EffectTokenizer.cpp" />
     <ClCompile Include="EffectParser.cpp" />
+    <ClCompile Include="FileLoader.cpp" />
     <ClCompile Include="FileWriter.cpp" />
+    <ClCompile Include="IEffect.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="EffectCompiler.cpp" />
     <ClCompile Include="_ShaderInclude.cpp" />

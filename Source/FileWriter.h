@@ -20,7 +20,7 @@ namespace NoiseEffectCompiler
 		bool OutputBinaryToFile(
 			const std::string& outPath,
 			const std::vector<N_UNIQUE_SHADER>& uniqueShaderList,
-			const IEffect* pEffect);
+			const IEffectDesc* pEffect);
 
 	private:
 
@@ -31,9 +31,9 @@ namespace NoiseEffectCompiler
 			const std::unordered_map<std::string, N_SAMPLER_INFO>& uniqueSamplers,
 			const std::vector<std::pair<std::string,ID3DBlob*>>& uniqueShaderBinarys);
 
-		void mFunction_WriteEffectHierarchy(const IEffect* pEffect);
+		void mFunction_WriteEffectHierarchy(const IEffectDesc* pEffect);
 
-		void mFunction_WritePass(IPass* pPass);
+		void mFunction_WritePass(IPassDesc* pPass);
 
 		void mFunction_WriteShader(N_SHADER_DESC* pShader);
 

@@ -23,6 +23,9 @@
     <Filter Include="FileWriter">
       <UniqueIdentifier>{2bcc19ea-b0c6-42eb-b47c-c937faf2164f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Effect">
+      <UniqueIdentifier>{fb2817ae-c9a0-4835-933a-131b9995e766}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EffectTokenizer.h">
@@ -49,6 +52,12 @@
     <ClInclude Include="FileWriter.h">
       <Filter>FileWriter</Filter>
     </ClInclude>
+    <ClInclude Include="IEffect.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="FileLoader.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -71,6 +80,12 @@
     </ClCompile>
     <ClCompile Include="FileWriter.cpp">
       <Filter>FileWriter</Filter>
+    </ClCompile>
+    <ClCompile Include="IEffect.cpp">
+      <Filter>Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="FileLoader.cpp">
+      <Filter>Effect</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

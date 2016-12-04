@@ -20,7 +20,7 @@ IEffectParser::IEffectParser()
 
 }
 
-bool  IEffectParser::Parse( std::vector<N_TokenInfo>&& tokenList,IEffect* pEffect)
+bool  IEffectParser::Parse( std::vector<N_TokenInfo>&& tokenList,IEffectDesc* pEffect)
 {
 	mTokenList = tokenList;
 	mTokenIndex = 0;
@@ -100,7 +100,7 @@ void IEffectParser::GetCompilationPlan(std::vector<N_SHADER_DESC>& outShaderList
 bool IEffectParser::mFunction_ParseTechnique()
 {
 	//new technique
-	ITechnique* pTech = nullptr;
+	ITechniqueDesc* pTech = nullptr;
 
 	//****************PATTERN*************************
 	//	[Identifier - Name] [Delimiter, '{'] [Keyword, "Pass" ][Keyword, "Pass" ]...[Keyword, "Pass" ] [Delimiter, '}' ]
@@ -159,10 +159,10 @@ bool IEffectParser::mFunction_ParseTechnique()
 	return true;
 }
 
-bool IEffectParser::mFunction_ParsePass(ITechnique* pFatherTechnique)
+bool IEffectParser::mFunction_ParsePass(ITechniqueDesc* pFatherTechnique)
 {
 	//new pass
-	IPass* pPass;
+	IPassDesc* pPass;
 
 	//****************PATTERN*************************
 	//	[Identifier - Name] [Delimiter, '{'] [Keyword, "VS" ][Keyword, "PS" ]...[Keyword, "Pass" ] [Delimiter, '}' ]
@@ -235,7 +235,7 @@ bool IEffectParser::mFunction_ParsePass(ITechnique* pFatherTechnique)
 	return true;
 }
 
-bool IEffectParser::mFunction_ParseShaderConfig(IPass* pFatherPass, NOISE_SHADER_TYPE st)
+bool IEffectParser::mFunction_ParseShaderConfig(IPassDesc* pFatherPass, NOISE_SHADER_TYPE st)
 {
 	//new shader
 	N_SHADER_DESC shader;

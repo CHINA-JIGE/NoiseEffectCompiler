@@ -37,6 +37,9 @@ std::cout<<msg<<std::endl;\
 #include "ShaderReflector.h"
 #include "FileWriter.h"
 
+#include "FileLoader.h"
+#include "IEffect.h"
+
 namespace NoiseEffectCompiler
 {
 
@@ -50,7 +53,7 @@ namespace NoiseEffectCompiler
 
 		bool		Compile();
 
-		IEffect* GetEffectInterface();
+		IEffectDesc* GetEffectInterface();
 
 	private:
 
@@ -75,7 +78,7 @@ namespace NoiseEffectCompiler
 		std::string mRelativePath;
 
 
-		IEffect					mEffect;
+		IEffectDesc			mEffect;
 		IEffectTokenizer	mTokenizer;
 		IEffectParser		mParser;
 		IShaderReflector	mShaderReflector;
